@@ -17,11 +17,11 @@ public class Graph {
         // Comparator function used for sorting edges
         // based on their weight
         public int compareTo(Edge compareEdge) {
-            return this.weight > compareEdge.weight ? 1 : -1;
+            return Double.compare(weight, compareEdge.weight);
         }
     }
 
-    public Edge[] getEdgeList(){
+    public Edge[] getEdgeList() {
         List<Edge> le = new LinkedList<>();
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
@@ -39,7 +39,7 @@ public class Graph {
         return edges;
     }
 
-    public Graph copy(){
+    public Graph copy() {
         Graph copy = new Graph();
         copy.n = n;
         copy.m = MM.copy(m);
@@ -47,12 +47,12 @@ public class Graph {
     }
 
     public void printm() {
-    for (int row = 0; row < this.m.length; row++) {
-        for (int col = 0; col < this.m[row].length; col++) {
-            System.out.printf("%5.1f ", this.m[row][col]);
+        for (int row = 0; row < this.m.length; row++) {
+            for (int col = 0; col < this.m[row].length; col++) {
+                System.out.printf("%5.1f ", this.m[row][col] == Double.MAX_VALUE ? 0 : m[row][col]);
+            }
+            System.out.println();
         }
-        System.out.println();
     }
-}
 
 }

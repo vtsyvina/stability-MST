@@ -27,7 +27,7 @@ public class ChakravartiWagelmans {
         kruskal.log = false;
         Graph gC = g.copy();
         gC.m = c;
-        Graph.Edge[] mst = kruskal.kruskalMST(gC);
+        Graph.Edge[] mst = kruskal.mst(gC);
         //optimal solusion of P(c)
         int[][] x0 = edgesToBoolMatrix(mst, gC.n);
         int[][] d = new int[gC.n][gC.n];
@@ -39,7 +39,7 @@ public class ChakravartiWagelmans {
         }
         // calculate v0(r)
         double cNormInf = MM.max(c);
-        Graph.Edge[] secondBest = kruskal.kruskalMSTSecondBest(gC);
+        Graph.Edge[] secondBest = kruskal.secondMst(gC);
         int[][] x_ = edgesToBoolMatrix(secondBest, gC.n);
         SegmentFunction v0 = vR(x_, c, d, cNormInf);
 
@@ -47,10 +47,10 @@ public class ChakravartiWagelmans {
         double[][] c_ = MM.diff(c, MM.mul(d, cNormInf));
         gC.m = c_;
         // line 6
-        mst = kruskal.kruskalMST(gC);
+        mst = kruskal.mst(gC);
         x_ = edgesToBoolMatrix(mst, gC.n);
         if (MM.eq(x_, x0)) {
-            mst = kruskal.kruskalMSTSecondBest(gC);
+            mst = kruskal.secondMst(gC);
             x_ = edgesToBoolMatrix(mst, gC.n);
         }
         // line 7
@@ -72,14 +72,14 @@ public class ChakravartiWagelmans {
             I.remove(0);
             c_ = MM.diff(c, MM.mul(d, p_.x));
             gC.m = c_;
-            mst = kruskal.kruskalMST(gC);
+            mst = kruskal.mst(gC);
             x_ = edgesToBoolMatrix(mst, gC.n);
             if (MM.eq(x_, x0)) {
-                mst = kruskal.kruskalMSTSecondBest(gC);
+                mst = kruskal.secondMst(gC);
                 x_ = edgesToBoolMatrix(mst, gC.n);
             }
             double solution = MM.dotProd(c_, x_);
-            if (solution < p_.y) {
+            if (p_.y - solution >= 0.00001) {
                 SegmentFunction vp_ = vR(x_, c, d, cNormInf);
                 inter = v.intersection(vp_);
                 if (inter.size() == 1) {
@@ -98,8 +98,8 @@ public class ChakravartiWagelmans {
         SegmentFunction vr0 = vR0(x0, c, MM.norm1(x0), cNormInf);
         inter = v.intersection(vr0);
         if (inter.size() != 1) {
-            System.out.println("Not one point in v and vx0 intersection!");
-            return -1;
+            System.out.println("Warning! Zero points in v and vx0 intersection!");
+            return 0;
         }
         return inter.get(0).x;
     }
@@ -172,8 +172,16 @@ public class ChakravartiWagelmans {
                 }
             }
             result.sort(Comparator.comparing(p -> p.x));
-            result = result.stream().filter(distinctByKey(p -> p.x)).collect(Collectors.toList());
-            return result;
+            List<Point> cleaned = new ArrayList<>();
+            for (int i = 0; i < result.size()-1; i++) {
+                if (Math.abs(result.get(i).x-result.get(i+1).x) > 0.0001){
+                    cleaned.add(result.get(i));
+                }
+            }
+            if (!result.isEmpty()){
+                cleaned.add(result.get(result.size()-1));
+            }
+            return cleaned;
         }
 
         private <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
@@ -194,7 +202,7 @@ public class ChakravartiWagelmans {
 
             double determinant = a1 * b2 - a2 * b1;
 
-            if (determinant == 0) {
+            if (Math.abs(determinant) <= 0.000001) {
                 // The lines are parallel. This is simplified
                 // by returning a pair of FLT_MAX
                 return new Point(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -205,7 +213,7 @@ public class ChakravartiWagelmans {
                 double fmax = Math.max(A.x, B.x);
                 double smin = Math.min(C.x, D.x);
                 double smax = Math.max(C.x, D.x);
-                if (x >= fmin && x >= smin && x <= fmax && x <= smax) {
+                if (x - fmin >= -0.0001 && x-smin >= 0.0001 && x-fmax <= 0.0001 && x-smax <= 0.0001) {
                     return new Point(x, y);
                 } else {
                     // lines intersect but not segments

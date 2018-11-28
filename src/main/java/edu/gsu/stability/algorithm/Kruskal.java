@@ -1,6 +1,7 @@
 package edu.gsu.stability.algorithm;
 
 import edu.gsu.stability.model.Graph;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -15,22 +16,21 @@ public class Kruskal {
         int parent, rank;
     }
 
-    ;
-
-    // The main function to construct MST using Kruskal's algorithm
-    public Graph.Edge[] kruskalMST(Graph g) {
-        Graph.Edge[] edges = g.getEdgeList();
-        int V = g.n;
+    /**
+     * Accepts sorted array of edges(useful for second best), number of vertices. Finds MST
+     * @param edges sorted array of edges
+     * @param n number of vertices
+     * @return MST
+     */
+    public Graph.Edge[] mst(Graph.Edge[] edges, int n){
+        int V = n;
         Graph.Edge result[] = new Graph.Edge[V - 1];  // Tnis will store the resultant MST
         int e = 0;  // An index variable, used for result[]
         int i = 0;  // An index variable, used for sorted edges
         for (i = 0; i < V - 1; ++i)
             result[i] = new Graph.Edge();
 
-        // Step 1:  Sort all the edges in non-decreasing order of their
-        // weight.  If we are not allowed to change the given graph, we
-        // can create a copy of array of edges
-        Arrays.sort(edges);
+
 
         // Allocate memory for creating V ssubsets
         subset subsets[] = new subset[V];
@@ -70,29 +70,45 @@ public class Kruskal {
         if (log) {
             printEdges(result);
         }
-
         return result;
     }
 
-    public Graph.Edge[] kruskalMSTSecondBest(Graph g) {
-        Graph.Edge[] edges = kruskalMST(g);
-        Graph copy = g.copy();
+    // The main function to construct MST using Kruskal's algorithm
+    public Graph.Edge[] mst(Graph g) {
+        Graph.Edge[] edges = g.getEdgeList();
+        // Step 1:  Sort all the edges in non-decreasing order of their
+        // weight.  If we are not allowed to change the given graph, we
+        // can create a copy of array of edges
+        Arrays.sort(edges);
+        return mst(edges, g.n);
+    }
+
+    public Graph.Edge[] secondMst(Graph g) {
+        System.out.println("start second mst");
+        Graph.Edge[] edges = g.getEdgeList();
+        Arrays.sort(edges);
+        Graph.Edge[] mst = mst(edges, g.n);
+
         Graph.Edge[] secondBest = new Graph.Edge[g.n - 1];
         double secondSum = 1_000_000_000;
-        for (int i = 0; i < edges.length; i++) {
-            int src = edges[i].src;
-            int dest = edges[i].dest;
-            copy.m[src][dest] = Double.MAX_VALUE;
-            copy.m[dest][src] = Double.MAX_VALUE;
-            Graph.Edge[] tmp = kruskalMST(copy);
+        for (int i = 0; i < mst.length; i++) {
+
+            int src = mst[i].src;
+            int dest = mst[i].dest;
+            Graph.Edge[] removed = new Graph.Edge[0];
+            for (int j = 0; j < edges.length; j++) {
+                if (edges[j].src == src && edges[j].dest == dest || edges[j].src == dest && edges[j].dest == src){
+                    removed = ArrayUtils.remove(edges, j);
+                }
+            }
+            Graph.Edge[] tmp = mst(removed, g.n);
             double sum = MSTWeight(tmp);
             if (secondSum > sum) {
                 secondSum = sum;
                 secondBest = tmp;
             }
-            copy.m[src][dest] = g.m[src][dest];
-            copy.m[dest][src] = g.m[dest][src];
         }
+        System.out.println("end second mst");
         return secondBest;
     }
 
